@@ -9,6 +9,7 @@ original_image = None
 ela_image = None
 
 def open_image():
+    """Hàm để mở và hiển thị hình ảnh gốc và ELA."""
     global original_image, ela_image, original_photo, ela_photo
     file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.jpg *.jpeg *.png")])
     if not file_path:
@@ -38,6 +39,7 @@ def open_image():
 
 
 def update_ela(*args):
+    """Hàm để cập nhật lại ảnh ELA khi giá trị slider thay đổi."""
     if original_image is not None:
         global ela_image, ela_photo
         ela_image = perform_ela(original_image, jpeg_quality_slider.get(), error_scale_slider.get())
