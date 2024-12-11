@@ -98,7 +98,7 @@ def compute_dct_jpeg_compression(image):
 def load_image(file_path):
     """Loads an image from the given file path and converts it to grayscale."""
     try:
-        image = Image.open(file_path).convert('RGB')  # Keep the image in RGB format
+        image = Image.open(file_path).convert('L')  # Convert to grayscale
         return image
     except Exception as e:
         print(f"Error loading image: {e}")
@@ -111,12 +111,11 @@ def resize_image_to_block_size(image, block_size):
     new_height = (height // block_size) * block_size
     return image.resize((new_width, new_height))
 
-def perform_ela(image, jpeg_quality, error_scale):
+def perform_ela(image, jpeg_quality=75, error_scale=10):
     """Performs Error Level Analysis (ELA) on the image."""
     try:
-        temp_path = 'output/temp_ela.jpg'
-        image.save(temp_path, 'JPEG', quality=jpeg_quality)
-        compressed_image = Image.open(temp_path).convert('RGB')
+        temp_path = save_temp_image(image, jpeg_quality)
+        compressed_image = Image.open(temp_path)
         ela_image = ImageChops.difference(image, compressed_image)
         ela_image = ImageEnhance.Brightness(ela_image).enhance(error_scale / 10.0)
         return ela_image
@@ -124,9 +123,10 @@ def perform_ela(image, jpeg_quality, error_scale):
         print(f"Error performing ELA: {e}")
         return None
 
+
 def save_temp_image(image, jpeg_quality):
     """Saves a temporary image file as a compressed JPEG."""
-    temp_path = 'output/temp_ela.jpg'
+    temp_path = 'temp_ela.jpg'
     try:
         image.save(temp_path, 'JPEG', quality=jpeg_quality)
     except Exception as e:
@@ -136,6 +136,6 @@ def save_temp_image(image, jpeg_quality):
 
 def cleanup_temp_files():
     """Removes temporary files used in the process."""
-    temp_path = 'output/temp_ela.jpg'
+    temp_path = 'temp_ela.jpg'
     if os.path.exists(temp_path):
         os.remove(temp_path)
