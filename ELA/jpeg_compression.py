@@ -95,15 +95,6 @@ def compute_dct_jpeg_compression(image):
     
     return compressed_data
 
-def load_image(file_path):
-    """Loads an image from the given file path and converts it to grayscale."""
-    try:
-        image = Image.open(file_path).convert('L')  # Convert to grayscale
-        return image
-    except Exception as e:
-        print(f"Error loading image: {e}")
-        return None
-
 def resize_image_to_block_size(image, block_size):
     """Resizes the image so that its dimensions are multiples of the block size."""
     width, height = image.size

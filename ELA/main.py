@@ -1,13 +1,16 @@
 import tkinter as tk
-from tkinter import filedialog
-from PIL import ImageTk
+from tkinter import filedialog, messagebox
+from PIL import ImageTk, ImageChops, ImageEnhance, Image
 import os
 import numpy as np
-from jpeg_compression import load_image, resize_image_to_block_size, perform_ela  # Import functions from jpeg_compression
-
-# Global variables to store image states
-global original_image, ela_image, original_photo, ela_photo
-
+from image_utils import load_image  # Import load_image from image_utils.py
+from jpeg_compression import perform_ela, resize_image_to_block_size, compute_dct_jpeg_compression,cleanup_temp_files
+# Khai báo các biến toàn cục để lưu trạng thái của ảnh
+original_image = None
+ela_image = None
+original_photo = None
+ela_photo = None
+current_mode = "L"  # Default mode is grayscale (L)
 
 def open_image():
     """Function to open and display the original image and ELA image."""
@@ -16,10 +19,10 @@ def open_image():
     if not file_path:
         return
 
-    original_image = load_image(file_path)
+    original_image = load_image(file_path)  # Now using the load_image function from image_utils
     if original_image is None:
         return
-    
+
     # Resize image to be multiple of 8x8 (for DCT compression compatibility)
     original_image = resize_image_to_block_size(original_image, 8)
     ela_image = perform_ela(original_image, jpeg_quality_slider.get(), error_scale_slider.get())
@@ -28,23 +31,65 @@ def open_image():
         return
 
     # Convert images to Tkinter-compatible format
+    display_images()
+
+def select_mode(mode):
+    """Switches the current mode (RGB or L) and updates the current image display."""
+    global current_mode, original_image, ela_image, original_photo, ela_photo
+
+    # Kiểm tra nếu chưa có ảnh được tải lên
+    if original_image is None:
+        messagebox.showwarning("Chưa có ảnh", "Vui lòng chọn ảnh trước khi thay đổi chế độ.")
+        return  # Dừng lại nếu chưa có ảnh
+
+    current_mode = mode
+    print(f"Switching mode to {current_mode}")
+    print(f"Original image mode: {original_image.mode}")
+    print(f"ELA image mode: {ela_image.mode}")
+
+
+    # Convert the current image to the selected mode (RGB or L)
+    original_image = convert_image_mode(original_image)
+
+    # Perform ELA again on the new mode image
+    ela_image = perform_ela(original_image, jpeg_quality_slider.get(), error_scale_slider.get())
+
+    # Display the images after mode change
+    display_images()
+
+def convert_image_mode(image):
+    """Converts the image to the current mode (RGB or L)."""
+    if current_mode == "L":
+        return image.convert('L')  # Convert to grayscale
+    elif current_mode == "RGB":
+        return image.convert('RGB')  # Convert to RGB
+    return image
+
+
+def display_images():
+    """Displays the original and ELA images."""
+    global original_image, ela_image, original_photo, ela_photo
+
+    if original_image is None or ela_image is None:
+        return
+
+    # Chuyển đổi ảnh thành định dạng tương thích với Tkinter
     original_photo = ImageTk.PhotoImage(original_image.resize((400, 400)))
     ela_photo = ImageTk.PhotoImage(ela_image.resize((400, 400)))
 
-    # Update the displayed images
+    # Cập nhật ảnh hiển thị
     original_label.config(image=original_photo)
     ela_label.config(image=ela_photo)
 
-    # Show sliders and buttons after image is loaded
+    # Hiển thị các slider và nút sau khi ảnh đã được tải
     jpeg_quality_label.pack(pady=5)
     jpeg_quality_slider.pack(pady=5)
     error_scale_label.pack(pady=5)
     error_scale_slider.pack(pady=5)
     choose_button.pack(pady=10)
 
-    # Hide the "+" button
+    # Ẩn nút "+" khi ảnh đã được tải
     add_image_button.pack_forget()
-
 
 def update_ela(*args):
     """Updates the ELA image when slider values change."""
@@ -56,17 +101,16 @@ def update_ela(*args):
         ela_photo = ImageTk.PhotoImage(ela_image.resize((400, 400)))
         ela_label.config(image=ela_photo)
 
-
-def cleanup_temp_files():
-    """Remove temporary files used in the process."""
-    temp_path = 'temp_ela.jpg'
-    if os.path.exists(temp_path):
-        os.remove(temp_path)
-
-
 # Set up the main Tkinter window
 root = tk.Tk()
 root.title("Error Level Analysis Tool")
+
+# Buttons to toggle RGB and L mode
+rgb_button = tk.Button(root, text="RGB", width=10, command=lambda: select_mode("RGB"))
+rgb_button.pack(side=tk.LEFT, padx=10, pady=10)
+
+l_button = tk.Button(root, text="L (Grayscale)", width=10, command=lambda: select_mode("L"))
+l_button.pack(side=tk.LEFT, padx=10, pady=10)
 
 # Add button to upload the image
 add_image_button = tk.Button(root, text="+", font=("Arial", 50), fg="black", bg="lightgrey", width=20, height=10, command=open_image)
