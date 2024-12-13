@@ -108,7 +108,7 @@ def perform_ela(image, jpeg_quality=75, error_scale=10):
         temp_path = save_temp_image(image, jpeg_quality)
         compressed_image = Image.open(temp_path)
         ela_image = ImageChops.difference(image, compressed_image)
-        ela_image = ImageEnhance.Brightness(ela_image).enhance(error_scale / 10.0)
+        ela_image = ImageEnhance.Brightness(ela_image).enhance(error_scale)
         return ela_image
     except Exception as e:
         print(f"Error performing ELA: {e}")
