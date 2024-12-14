@@ -1,109 +1,106 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, scrolledtext
 from PIL import ImageTk, ImageChops, ImageEnhance, Image
 import os
 import numpy as np
-from image_utils import load_image  # Import load_image from image_utils.py
-from jpeg_compression import perform_ela, resize_image_to_block_size, compute_dct_jpeg_compression,cleanup_temp_files
-# Khai báo các biến toàn cục để lưu trạng thái của ảnh
-original_image = None
+from image_utils import load_image, format_exif_info
+from jpeg_compression import perform_ela, resize_image_to_block_size, compute_dct_jpeg_compression, cleanup_temp_files
+
+original_rgb_image = None  
+current_image = None 
 ela_image = None
 original_photo = None
 ela_photo = None
-current_mode = "L"  # Default mode is grayscale (L)
+current_mode = "RGB" 
+current_file_path = None
 
 def open_image():
-    """Function to open and display the original image and ELA image."""
-    global original_image, ela_image, original_photo, ela_photo
+    """Function to open and display the original image, ELA image, and EXIF information."""
+    global original_rgb_image, current_image, ela_image, original_photo, ela_photo, current_file_path
     file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.jpg *.jpeg *.png")])
     if not file_path:
         return
 
-    original_image = load_image(file_path)  # Now using the load_image function from image_utils
-    if original_image is None:
+    current_file_path = file_path
+    original_rgb_image = load_image(file_path)
+    if original_rgb_image is None:
         return
 
-    # Resize image to be multiple of 8x8 (for DCT compression compatibility)
-    original_image = resize_image_to_block_size(original_image, 8)
-    ela_image = perform_ela(original_image, jpeg_quality_slider.get(), error_scale_slider.get())
+    original_rgb_image = resize_image_to_block_size(original_rgb_image, 8)
+    
+    current_image = original_rgb_image.copy()
+    
+    ela_image = perform_ela(current_image, jpeg_quality_slider.get(), error_scale_slider.get())
 
     if ela_image is None:
         return
 
-    # Convert images to Tkinter-compatible format
     display_images()
+    display_exif_info()
 
 def select_mode(mode):
     """Switches the current mode (RGB or L) and updates the current image display."""
-    global current_mode, original_image, ela_image, original_photo, ela_photo
+    global current_mode, current_image, ela_image, original_photo, ela_photo
 
-    # Kiểm tra nếu chưa có ảnh được tải lên
-    if original_image is None:
-        messagebox.showwarning("Chưa có ảnh", "Vui lòng chọn ảnh trước khi thay đổi chế độ.")
-        return  # Dừng lại nếu chưa có ảnh
+    if original_rgb_image is None:
+        messagebox.showwarning("No Image", "Please select an image first.")
+        return
 
     current_mode = mode
     print(f"Switching mode to {current_mode}")
-    print(f"Original image mode: {original_image.mode}")
-    print(f"ELA image mode: {ela_image.mode}")
 
+    if current_mode == "L":
+        current_image = original_rgb_image.convert('L')
+    elif current_mode == "RGB":
+        current_image = original_rgb_image.copy()
 
-    # Convert the current image to the selected mode (RGB or L)
-    original_image = convert_image_mode(original_image)
+    ela_image = perform_ela(current_image, jpeg_quality_slider.get(), error_scale_slider.get())
 
-    # Perform ELA again on the new mode image
-    ela_image = perform_ela(original_image, jpeg_quality_slider.get(), error_scale_slider.get())
-
-    # Display the images after mode change
     display_images()
 
-def convert_image_mode(image):
-    """Converts the image to the current mode (RGB or L)."""
-    if current_mode == "L":
-        return image.convert('L')  # Convert to grayscale
-    elif current_mode == "RGB":
-        return image.convert('RGB')  # Convert to RGB
-    return image
-
+def display_exif_info():
+    """Display EXIF information in the text widget."""
+    if current_file_path:
+        exif_text.config(state=tk.NORMAL)
+        exif_text.delete('1.0', tk.END)
+        exif_info = format_exif_info(current_file_path)
+        exif_text.insert(tk.END, exif_info)
+        exif_text.config(state=tk.DISABLED)
 
 def display_images():
-    """Displays the original and ELA images."""
-    global original_image, ela_image, original_photo, ela_photo
+    """Displays the current and ELA images."""
+    global current_image, ela_image, original_photo, ela_photo
 
-    if original_image is None or ela_image is None:
+    if current_image is None or ela_image is None:
         return
 
-    # Chuyển đổi ảnh thành định dạng tương thích với Tkinter
-    original_photo = ImageTk.PhotoImage(original_image.resize((400, 400)))
+    original_photo = ImageTk.PhotoImage(current_image.resize((400, 400)))
     ela_photo = ImageTk.PhotoImage(ela_image.resize((400, 400)))
-
-    # Cập nhật ảnh hiển thị
     original_label.config(image=original_photo)
     ela_label.config(image=ela_photo)
-
-    # Hiển thị các slider và nút sau khi ảnh đã được tải
     jpeg_quality_label.pack(pady=5)
     jpeg_quality_slider.pack(pady=5)
     error_scale_label.pack(pady=5)
     error_scale_slider.pack(pady=5)
     choose_button.pack(pady=10)
+    
+    exif_frame.pack(pady=10)
 
-    # Ẩn nút "+" khi ảnh đã được tải
     add_image_button.pack_forget()
 
 def update_ela(*args):
     """Updates the ELA image when slider values change."""
-    if original_image is not None:
+    if current_image is not None:
         global ela_image, ela_photo
-        ela_image = perform_ela(original_image, jpeg_quality_slider.get(), error_scale_slider.get())
+        ela_image = perform_ela(current_image, jpeg_quality_slider.get(), error_scale_slider.get())
         if ela_image is None:
             return
         ela_photo = ImageTk.PhotoImage(ela_image.resize((400, 400)))
         ela_label.config(image=ela_photo)
 
-# Set up the main Tkinter window
 root = tk.Tk()
-root.title("Error Level Analysis Tool")
+root.title("Image Analysis Tool: ELA and EXIF")
+root.geometry("1000x1200")  # Increased window size to accommodate EXIF info
 
 # Buttons to toggle RGB and L mode
 rgb_button = tk.Button(root, text="RGB", width=10, command=lambda: select_mode("RGB"))
@@ -120,7 +117,7 @@ add_image_button.pack(pady=20)
 frame = tk.Frame(root)
 frame.pack(pady=10)
 
-# Placeholders for image labels (original and ELA images)
+# Placeholders for image labels (current and ELA images)
 original_label = tk.Label(frame)
 original_label.grid(row=0, column=0, padx=5)
 ela_label = tk.Label(frame)
@@ -137,6 +134,15 @@ error_scale_slider.set(10)  # Default error scale
 
 # Button to choose another image
 choose_button = tk.Button(root, text="Choose Another Image", command=open_image)
+
+# Frame for EXIF information
+exif_frame = tk.Frame(root)
+exif_title = tk.Label(exif_frame, text="EXIF Information", font=("Arial", 12, "bold"))
+exif_title.pack()
+
+# Scrolled text widget to display EXIF information
+exif_text = scrolledtext.ScrolledText(exif_frame, wrap=tk.WORD, width=60, height=10, state=tk.DISABLED)
+exif_text.pack(padx=10, pady=10)
 
 # Start the Tkinter main loop
 root.protocol("WM_DELETE_WINDOW", lambda: (cleanup_temp_files(), root.destroy()))  # Cleanup temp files on exit
