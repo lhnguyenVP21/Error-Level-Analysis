@@ -2,9 +2,7 @@ import numpy as np
 from PIL import Image, ImageChops, ImageEnhance
 import os
 
-
 def load_dct_tables():
-    """Loads the quantization matrix, DC codes, and AC codes from files."""
     try:
         Q = np.loadtxt('dct/Quantization_Matrix.txt', delimiter='\t', dtype=int)
         DC_Codes = np.loadtxt('dct/JPEG_DC_Codes.txt', delimiter='\t', dtype=str)
@@ -16,7 +14,6 @@ def load_dct_tables():
 
 
 def compute_forward_2d_dct(block):
-    """Computes the 2D Discrete Cosine Transform (DCT) for an 8x8 block."""
     N = block.shape[0]
     dct_block = np.zeros_like(block, dtype=float)
     c = lambda x: 1 / np.sqrt(2) if x == 0 else 1
@@ -33,12 +30,10 @@ def compute_forward_2d_dct(block):
 
 
 def quantize_dct_image(dct_block, Q):
-    """Quantizes the DCT image using the quantization matrix Q."""
     return np.round(dct_block / Q)
 
 
 def construct_zigzag_array(matrix):
-    """Constructs a flattened array from a given matrix using a zigzag pattern."""
     N = matrix.shape[0]
     result = []
     for i in range(2 * N - 1):
@@ -50,7 +45,6 @@ def construct_zigzag_array(matrix):
 
 
 def compute_dct_jpeg_compression(image):
-    """Computes JPEG compression on an image using DCT and quantization."""
     Q, DC_Codes, AC_Codes = load_dct_tables()
     if Q is None or DC_Codes is None or AC_Codes is None:
         print("Error: Could not load DCT-related files.")
@@ -96,14 +90,12 @@ def compute_dct_jpeg_compression(image):
     return compressed_data
 
 def resize_image_to_block_size(image, block_size):
-    """Resizes the image so that its dimensions are multiples of the block size."""
     width, height = image.size
     new_width = (width // block_size) * block_size
     new_height = (height // block_size) * block_size
     return image.resize((new_width, new_height))
 
 def perform_ela(image, jpeg_quality=75, error_scale=10):
-    """Performs Error Level Analysis (ELA) on the image."""
     try:
         temp_path = save_temp_image(image, jpeg_quality)
         compressed_image = Image.open(temp_path)
@@ -116,7 +108,6 @@ def perform_ela(image, jpeg_quality=75, error_scale=10):
 
 
 def save_temp_image(image, jpeg_quality):
-    """Saves a temporary image file as a compressed JPEG."""
     temp_path = 'temp_ela.jpg'
     try:
         image.save(temp_path, 'JPEG', quality=jpeg_quality)
@@ -126,7 +117,6 @@ def save_temp_image(image, jpeg_quality):
 
 
 def cleanup_temp_files():
-    """Removes temporary files used in the process."""
     temp_path = 'temp_ela.jpg'
     if os.path.exists(temp_path):
         os.remove(temp_path)
