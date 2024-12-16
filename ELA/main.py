@@ -14,7 +14,6 @@ current_file_path = None
 exif_visible = False
 
 def open_image():
-    """Function to open and display the original image, ELA image, and EXIF information."""
     global original_rgb_image, current_image, ela_image, original_photo, ela_photo, current_file_path
     file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.jpg *.jpeg *.png")])
     if not file_path:
@@ -38,7 +37,6 @@ def open_image():
     display_exif_info()
 
 def select_mode(mode):
-    """Switches the current mode (RGB or L) and updates the current image display."""
     global current_mode, current_image, ela_image, original_photo, ela_photo
     if original_rgb_image is None:
         messagebox.showwarning("No Image", "Please select an image first.")
@@ -50,7 +48,6 @@ def select_mode(mode):
     display_images()
 
 def display_exif_info():
-    """Display EXIF information in the text widget."""
     if current_file_path:
         exif_text.config(state=tk.NORMAL)
         exif_text.delete('1.0', tk.END)
@@ -59,7 +56,6 @@ def display_exif_info():
         exif_text.config(state=tk.DISABLED)
 
 def display_images():
-    """Displays the current and ELA images."""
     global current_image, ela_image, original_photo, ela_photo
 
     if current_image is None or ela_image is None:
@@ -89,25 +85,23 @@ def toggle_exif_visibility():
     exif_visible = not exif_visible
     if exif_visible:
         exif_frame.pack(fill=tk.BOTH, expand=True, pady=20)
-        display_exif_info()  # Load EXIF information when the frame is shown
+        display_exif_info()
         toggle_exif_button.config(text="Hide EXIF")
     else:
         exif_frame.pack_forget()
         toggle_exif_button.config(text="Show EXIF")
-# Tkinter window setup
+
 root = tk.Tk()
 root.title("Image Analysis Tool: ELA and EXIF")
 root.geometry("1400x800")
 root.config(bg="white")
 
-# Add button to upload the image
 add_image_button = tk.Button(root, text="+", font=("Arial", 50), fg="black", bg="lightgrey", command=open_image)
 add_image_button.pack(pady=50)
 
-# Left Panel: Controls
+
 left_frame = tk.Frame(root, bg="white", width=300, padx=10, pady=10)
 
-# Frame for RGB and Grayscale buttons
 mode_frame = tk.Frame(left_frame, bg="white")
 mode_frame.pack(pady=5)
 
@@ -133,10 +127,8 @@ error_scale_slider.pack()
 choose_button = tk.Button(left_frame, text="Choose Another Image", command=open_image)
 choose_button.pack(pady=10)
 
-# Right Panel: Images and EXIF
 right_frame = tk.Frame(root, bg="white", padx=10, pady=10)
 
-# Image Previews
 image_frame = tk.Frame(right_frame, bg='white')
 image_frame.pack(pady=10)
 
@@ -145,21 +137,16 @@ original_label.pack(side=tk.LEFT, padx=10)
 ela_label = tk.Label(image_frame)
 ela_label.pack(side=tk.RIGHT, padx=10)
 
-# Add a button to toggle EXIF information visibility
+
 toggle_exif_button = tk.Button(right_frame, text="Show EXIF", command=toggle_exif_visibility, width=20)
 toggle_exif_button.pack(pady=10)
-# Frame for EXIF information
+
 exif_frame = tk.LabelFrame(right_frame, text="EXIF Information", bg="white", padx=10, pady=10, width=400)
 # exif_frame.pack(fill=tk.BOTH, expand=True,pady=20)
 
 exif_text = scrolledtext.ScrolledText(exif_frame, wrap=tk.WORD, width=30, height=10, state=tk.DISABLED)
 exif_text.pack(fill=tk.BOTH, expand=True)
 
-
-
-
-# Cleanup on close
 root.protocol("WM_DELETE_WINDOW", lambda: (cleanup_temp_files(), root.destroy()))
 
-# Start Tkinter main loop
 root.mainloop()

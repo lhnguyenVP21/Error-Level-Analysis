@@ -34,10 +34,6 @@ def get_camera_info(exif_data):
 
 def get_gps_info(exif_data):
     def convert_to_degrees(value):
-        """
-        Convert GPS coordinates to degrees.
-        value is a tuple of (degrees, minutes, seconds) in rational number format
-        """
         if value is None:
             return None
         
@@ -94,44 +90,33 @@ def check_software_modify(exif_data):
     return software_info
 
 def format_exif_info(file_path):
-    """
-    Comprehensive function to extract and format all available EXIF information.
-    """
-    # Load the image
     image = load_image(file_path)
     if image is None:
         return "No EXIF data available"
     
-    # Get full EXIF data
     exif_data = get_exif_data(image)
     if not exif_data:
         return "No EXIF data found"
-    
-    # Compile comprehensive EXIF information
     exif_info = []
     
-    # Camera Information
     camera_info = get_camera_info(exif_data)
     if camera_info:
         exif_info.append("🎥 Camera Information:")
         for key, value in camera_info.items():
             exif_info.append(f"  - {key}: {value}")
     
-    # Date Information
     dates = get_dates(exif_data)
     if dates:
         exif_info.append("\n📅 Date Information:")
         for key, value in dates.items():
             exif_info.append(f"  - {key}: {value}")
     
-    # GPS Information
     gps_info = get_gps_info(exif_data)
     if gps_info:
         exif_info.append("\n🌍 GPS Information:")
         for key, value in gps_info.items():
             exif_info.append(f"  - {key}: {value}")
     
-    # Software Information
     software_info = check_software_modify(exif_data)
     if software_info:
         exif_info.append("\n💻 Software Information:")
