@@ -126,7 +126,7 @@ jpeg_quality_slider.pack()
 
 error_scale_label = tk.Label(left_frame, text="Error Scale", font=("Arial", 10), bg="white")
 error_scale_label.pack(pady=(20, 5))
-error_scale_slider = tk.Scale(left_frame, from_=1, to=50, orient=tk.HORIZONTAL, command=update_ela, length=400)
+error_scale_slider = tk.Scale(left_frame, from_=1, to=100, orient=tk.HORIZONTAL, command=update_ela, length=400)
 error_scale_slider.set(10)
 error_scale_slider.pack()
 
